@@ -1,8 +1,9 @@
-# KWIZ
 import tkinter as tk
 from tkinter import messagebox
+from PIL import Image, ImageTk
 import random
 
+# Questions data
 questions_data = {
     "Math": [
         ("What is 2 + 2?", "4", ["3", "4", "5", "6"]),
@@ -38,9 +39,28 @@ class QuizApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Quiz App")
-        self.exam_duration = 300  # total time in seconds (5 minutes)
-        self.timer = None
+        self.root.geometry("500x450")
+
+        # Load and set background image
+        self.bg_image = Image.open("A_2D_digital_illustration_background_for_an_educat.png")
+        self.bg_image = self.bg_image.resize((500, 450))
+        self.bg_photo = ImageTk.PhotoImage(self.bg_image)
+
+        self.canvas = tk.Canvas(self.root, width=500, height=450)
+        self.canvas.pack(fill="both", expand=True)
+        self.bg = self.canvas.create_image(0, 0, anchor="nw", image=self.bg_photo)
+
+        # Start the name screen
+        self.exam_duration = 300  # 5 minutes
         self.name_screen()
+
+    def clear(self, exclude_timer=False):
+        for widget in self.root.winfo_children():
+            if exclude_timer and isinstance(widget, tk.Label) and widget == getattr(self, 'timer_label', None):
+                continue
+            widget.destroy()
+        self.canvas.delete("all")
+        self.bg = self.canvas.create_image(0, 0, anchor="nw", image=self.bg_photo)
 
     def name_screen(self):
         self.clear()
@@ -51,10 +71,13 @@ class QuizApp:
         self.questions = []
         self.remaining_time = self.exam_duration
 
-        tk.Label(self.root, text="Enter your name:", font=('Arial', 16)).pack(pady=20)
+        self.name_label = tk.Label(self.root, text="Enter your name:", font=('Arial', 16), bg='white')
         self.name_entry = tk.Entry(self.root, font=('Arial', 14))
-        self.name_entry.pack()
-        tk.Button(self.root, text="Next", command=self.select_subjects).pack(pady=10)
+        self.next_button = tk.Button(self.root, text="Next", command=self.select_subjects)
+
+        self.canvas.create_window(250, 100, window=self.name_label)
+        self.canvas.create_window(250, 140, window=self.name_entry)
+        self.canvas.create_window(250, 180, window=self.next_button)
 
     def select_subjects(self):
         self.name = self.name_entry.get().strip()
@@ -63,15 +86,19 @@ class QuizApp:
             return
 
         self.clear()
-        tk.Label(self.root, text="Select 4 subjects:", font=('Arial', 16)).pack(pady=10)
+        self.canvas.create_text(250, 30, text="Select 4 subjects:", font=('Arial', 16), fill='white')
+
         self.subject_vars = {}
+        y = 60
         for subject in questions_data.keys():
             var = tk.IntVar()
-            chk = tk.Checkbutton(self.root, text=subject, variable=var, font=('Arial', 12))
-            chk.pack(anchor='w')
+            chk = tk.Checkbutton(self.root, text=subject, variable=var, font=('Arial', 12), bg='white')
+            self.canvas.create_window(250, y, window=chk)
             self.subject_vars[subject] = var
+            y += 30
 
-        tk.Button(self.root, text="Start Quiz", command=self.start_quiz).pack(pady=10)
+        start_btn = tk.Button(self.root, text="Start Quiz", command=self.start_quiz)
+        self.canvas.create_window(250, y + 10, window=start_btn)
 
     def start_quiz(self):
         selected = [subj for subj, var in self.subject_vars.items() if var.get()]
@@ -83,10 +110,10 @@ class QuizApp:
         self.questions = []
         for subj in self.selected_subjects:
             self.questions += questions_data[subj]
+
         random.shuffle(self.questions)
         self.current_question_index = 0
         self.score = 0
-
         self.start_timer()
         self.show_question()
 
@@ -101,8 +128,8 @@ class QuizApp:
         if hasattr(self, "timer_label"):
             self.timer_label.config(text=timer_text)
         else:
-            self.timer_label = tk.Label(self.root, text=timer_text, font=('Arial', 12), fg='red')
-            self.timer_label.pack()
+            self.timer_label = tk.Label(self.root, text=timer_text, font=('Arial', 12), fg='red', bg='white')
+            self.canvas.create_window(400, 20, window=self.timer_label)
 
     def decrement_timer(self):
         self.remaining_time -= 1
@@ -114,52 +141,44 @@ class QuizApp:
 
     def show_question(self):
         self.clear(exclude_timer=True)
-
         if self.current_question_index >= len(self.questions):
             return self.show_result()
 
-        progress = f"Question {self.current_question_index + 1} of {len(self.questions)}"
-        tk.Label(self.root, text=progress, font=('Arial', 12)).pack(pady=5)
-
         q, ans, options = self.questions[self.current_question_index]
-        tk.Label(self.root, text=q, wraplength=400, font=('Arial', 14)).pack(pady=20)
+        progress = f"Question {self.current_question_index + 1} of {len(self.questions)}"
 
+        self.canvas.create_text(250, 30, text=progress, font=('Arial', 12), fill='white')
+        self.canvas.create_text(250, 70, text=q, font=('Arial', 14), fill='white', width=400)
+
+        self.correct_answer = ans
         self.selected_option = tk.StringVar()
+        y = 120
         for opt in options:
-            tk.Radiobutton(self.root, text=opt, variable=self.selected_option, value=opt, font=('Arial', 12)).pack(anchor='w')
+            rb = tk.Radiobutton(self.root, text=opt, variable=self.selected_option, value=opt, font=('Arial', 12), bg='white')
+            self.canvas.create_window(250, y, window=rb)
+            y += 30
 
-        tk.Button(self.root, text="Next", command=self.next_question).pack(pady=10)
+        next_btn = tk.Button(self.root, text="Next", command=self.next_question)
+        self.canvas.create_window(250, y + 10, window=next_btn)
 
     def next_question(self):
         selected = self.selected_option.get()
-        correct_answer = self.questions[self.current_question_index][1]
-        if selected == correct_answer:
+        if selected == self.correct_answer:
             self.score += 1
 
         self.current_question_index += 1
         self.show_question()
 
     def show_result(self):
-        if self.timer:
-            self.root.after_cancel(self.timer)
+        self.root.after_cancel(self.timer)
         self.clear()
-
-        total = len(self.questions)
-        tk.Label(self.root, text="Quiz Completed!", font=('Arial', 16)).pack(pady=10)
-        tk.Label(self.root, text=f"{self.name}, your score: {self.score} / {total}", font=('Arial', 14)).pack(pady=10)
-
-        tk.Button(self.root, text="Retake Quiz", command=self.name_screen).pack(pady=5)
-        tk.Button(self.root, text="Exit", command=self.root.quit).pack(pady=5)
-
-    def clear(self, exclude_timer=False):
-        for widget in self.root.winfo_children():
-            if exclude_timer and hasattr(self, 'timer_label') and widget == self.timer_label:
-                continue
-            widget.destroy()
+        result_text = f"{self.name}, your score is {self.score} out of {len(self.questions)}"
+        self.canvas.create_text(250, 150, text=result_text, font=('Arial', 16), fill='white')
+        restart_btn = tk.Button(self.root, text="Restart", command=self.name_screen)
+        self.canvas.create_window(250, 200, window=restart_btn)
 
 # Run the app
 if __name__ == "__main__":
     root = tk.Tk()
-    root.geometry("500x450")
     app = QuizApp(root)
     root.mainloop()
