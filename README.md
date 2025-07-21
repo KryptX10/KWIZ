@@ -41,7 +41,7 @@ class QuizApp:
         self.root.title("Quiz App")
         self.root.geometry("500x450")
 
-        # Load and set background image with enforcement
+        # Load and set background image
         try:
             self.bg_image = Image.open("bgimage.png")
             self.bg_image = self.bg_image.resize((500, 450))
@@ -60,9 +60,8 @@ class QuizApp:
 
     def clear(self, exclude_timer=False):
         for widget in self.root.winfo_children():
-            if exclude_timer and isinstance(widget, tk.Label) and widget == getattr(self, 'timer_label', None):
-                continue
-            widget.destroy()
+            if widget != self.canvas and (not exclude_timer or widget != getattr(self, 'timer_label', None)):
+                widget.destroy()
         self.canvas.delete("all")
         self.bg = self.canvas.create_image(0, 0, anchor="nw", image=self.bg_photo)
 
