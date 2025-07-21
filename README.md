@@ -41,16 +41,20 @@ class QuizApp:
         self.root.title("Quiz App")
         self.root.geometry("500x450")
 
-        # Load and set background image
-        self.bg_image = Image.open("A_2D_digital_illustration_background_for_an_educat.png")
-        self.bg_image = self.bg_image.resize((500, 450))
-        self.bg_photo = ImageTk.PhotoImage(self.bg_image)
+        # Load and set background image with enforcement
+        try:
+            self.bg_image = Image.open("bgimage.png")
+            self.bg_image = self.bg_image.resize((500, 450))
+            self.bg_photo = ImageTk.PhotoImage(self.bg_image)
+        except Exception as e:
+            messagebox.showerror("Image Error", f"Failed to load 'bgimage.png'.\nError: {e}")
+            self.root.destroy()
+            return
 
         self.canvas = tk.Canvas(self.root, width=500, height=450)
         self.canvas.pack(fill="both", expand=True)
         self.bg = self.canvas.create_image(0, 0, anchor="nw", image=self.bg_photo)
 
-        # Start the name screen
         self.exam_duration = 300  # 5 minutes
         self.name_screen()
 
