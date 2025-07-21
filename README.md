@@ -3,7 +3,6 @@ from tkinter import messagebox
 from PIL import Image, ImageTk
 import random
 
-# Questions data
 questions_data = {
     "Math": [
         ("What is 2 + 2?", "4", ["3", "4", "5", "6"]),
@@ -40,19 +39,25 @@ class QuizApp:
         self.root = root
         self.root.title("Quiz App")
         self.root.geometry("500x450")
+
         self.cover_image_name = "coverImage.png"
         self.quiz_image_name = "bgimage.png"
+        self.bg_photo = self.load_background(self.cover_image_name)
+
+        self.canvas = tk.Canvas(self.root, width=500, height=450)
+        self.canvas.pack(fill="both", expand=True)
+        self.bg = self.canvas.create_image(0, 0, anchor="nw", image=self.bg_photo)
+
         self.exam_duration = 300  # 5 minutes
         self.name_screen()
 
-    def load_background(self, image_name):
+    def load_background(self, filename):
         try:
-            image = Image.open(image_name)
+            image = Image.open(filename)
             image = image.resize((500, 450))
-            photo = ImageTk.PhotoImage(image)
-            return photo
+            return ImageTk.PhotoImage(image)
         except Exception as e:
-            messagebox.showerror("Image Error", f"Failed to load '{image_name}'.\nError: {e}")
+            messagebox.showerror("Image Error", f"Failed to load '{filename}'.\nError: {e}")
             self.root.destroy()
 
     def clear(self, exclude_timer=False):
@@ -64,10 +69,7 @@ class QuizApp:
 
     def name_screen(self):
         self.bg_photo = self.load_background(self.cover_image_name)
-        self.canvas = tk.Canvas(self.root, width=500, height=450)
-        self.canvas.pack(fill="both", expand=True)
-        self.bg = self.canvas.create_image(0, 0, anchor="nw", image=self.bg_photo)
-
+        self.clear()
         self.name = ""
         self.selected_subjects = []
         self.current_question_index = 0
@@ -91,11 +93,8 @@ class QuizApp:
 
         self.bg_photo = self.load_background(self.quiz_image_name)
         self.clear()
-        self.canvas = tk.Canvas(self.root, width=500, height=450)
-        self.canvas.pack(fill="both", expand=True)
-        self.bg = self.canvas.create_image(0, 0, anchor="nw", image=self.bg_photo)
+        self.canvas.create_text(250, 30, text="Select 4 subjects:", font=('Arial', 16), fill='black')
 
-        self.canvas.create_text(250, 30, text="Select 4 subjects:", font=('Arial', 16), fill='white')
         self.subject_vars = {}
         y = 60
         for subject in questions_data.keys():
@@ -148,21 +147,27 @@ class QuizApp:
             self.timer = self.root.after(1000, self.decrement_timer)
 
     def show_question(self):
+        self.bg_photo = self.load_background(self.quiz_image_name)
         self.clear(exclude_timer=True)
+        self.canvas = tk.Canvas(self.root, width=500, height=450)
+        self.canvas.pack(fill="both", expand=True)
+        self.bg = self.canvas.create_image(0, 0, anchor="nw", image=self.bg_photo)
+
         if self.current_question_index >= len(self.questions):
             return self.show_result()
 
         q, ans, options = self.questions[self.current_question_index]
         progress = f"Question {self.current_question_index + 1} of {len(self.questions)}"
 
-        self.canvas.create_text(250, 30, text=progress, font=('Arial', 12), fill='white')
-        self.canvas.create_text(250, 70, text=q, font=('Arial', 14), fill='white', width=400)
+        self.canvas.create_text(250, 30, text=progress, font=('Arial', 12), fill='black')
+        self.canvas.create_text(250, 70, text=q, font=('Helvetica', 14, 'bold'), fill='black', width=400)
 
         self.correct_answer = ans
-        self.selected_option = tk.StringVar()
+        self.selected_option = tk.StringVar(value="")  # Unselect initially
         y = 120
         for opt in options:
-            rb = tk.Radiobutton(self.root, text=opt, variable=self.selected_option, value=opt, font=('Arial', 12), bg='white')
+            rb = tk.Radiobutton(self.root, text=opt, variable=self.selected_option, value=opt,
+                                font=('Arial', 12), bg='white', anchor='w', width=25, justify='left')
             self.canvas.create_window(250, y, window=rb)
             y += 30
 
@@ -189,12 +194,14 @@ class QuizApp:
 
     def show_result(self):
         self.root.after_cancel(self.timer)
+        self.bg_photo = self.load_background(self.quiz_image_name)
         self.clear()
         result_text = f"{self.name}, your score is {self.score} out of {len(self.questions)}"
-        self.canvas.create_text(250, 150, text=result_text, font=('Arial', 16), fill='white')
+        self.canvas.create_text(250, 150, text=result_text, font=('Arial', 16), fill='black')
         restart_btn = tk.Button(self.root, text="Restart", command=self.name_screen)
         self.canvas.create_window(250, 200, window=restart_btn)
 
+# Run the app
 if __name__ == "__main__":
     root = tk.Tk()
     app = QuizApp(root)
