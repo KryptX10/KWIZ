@@ -1,130 +1,44 @@
-def next_question(self):
-    self.user_answers[self.current_question_index] = self.selected_option  # Save current answer
-    self.current_question_index += 1
-
-    if self.current_question_index >= len(self.questions):  # ✅ CORRECT list
-        self.show_result()
-    else:
-        self.show_question()
-
-def show_question(self):
-    self.bg_photo = self.load_background(self.quiz_image_name)
-    self.clear(exclude_timer=True)
-
-    if self.current_question_index >= len(self.questions):
-        return self.show_result()
-
-    screen_width = self.root.winfo_screenwidth()
-    screen_height = self.root.winfo_screenheight()
-
-    q, ans, options = self.questions[self.current_question_index]
-    self.correct_answer = ans
-    self.selected_option = None
-    self.option_buttons = []
-
-    font_size_question = int(screen_height * 0.03)
-    font_size_options = int(screen_height * 0.025)
-
-    self.canvas.create_text(screen_width // 2, screen_height * 0.05,
-                            text=f"Question {self.current_question_index + 1} of {len(self.questions)}",
-                            font=('Arial', font_size_question, 'bold'), fill='black')
-
-    self.canvas.create_text(screen_width // 2, screen_height * 0.12, text=q,
-                            font=('Arial', font_size_question, 'bold'),
-                            fill='black', width=int(screen_width * 0.8))
-
-    option_start_y = int(screen_height * 0.18)
-    option_spacing = int(screen_height * 0.06)
-
-    def select_option(opt, btn):
-        for b in self.option_buttons:
-            b.config(bg='white', relief='raised')
-        btn.config(bg='lightblue', relief='sunken')
-        self.selected_option = opt
-
-    for i, opt in enumerate(options):
-        btn = tk.Button(self.root, text=opt,
-                        font=('Arial', font_size_options), width=40,
-                        anchor='w', justify='left', bg='white', relief='raised')
-        btn.config(command=lambda o=opt, b=btn: select_option(o, b))
-        self.option_buttons.append(btn)
-        self.canvas.create_window(screen_width // 2, option_start_y + i * option_spacing, window=btn)
-
-    previous_selection = self.user_answers[self.current_question_index]
-    if previous_selection:
-        for btn in self.option_buttons:
-            if btn['text'] == previous_selection:
-                btn.config(bg='lightblue', relief='sunken')
-                self.selected_option = previous_selection
-                break
-
-    btn_frame = tk.Frame(self.root, bg='white')
-
-    if self.current_question_index > 0:
-        prev_btn = tk.Button(btn_frame, text="Previous", font=('Arial', 14), command=self.prev_question)
-        prev_btn.pack(side='left', padx=10)
-
-    next_btn = tk.Button(btn_frame, text="Next", font=('Arial', 14), command=self.next_question)
-    next_btn.pack(side='left', padx=10)
-
-    self.canvas.create_window(screen_width // 2, option_start_y + len(options) * option_spacing + 30,
-                              window=btn_frame)
-
-    self.update_timer()  # ✅ Ensure timer is shown on every question
-
-def show_result(self):
-    try:
-        self.root.after_cancel(self.timer)
-    except Exception:
-        pass
-
-    self.bg_photo = self.load_background(self.quiz_image_name)
+def view_answers(self):
     self.clear()
+    self.bg_photo = self.load_background(self.quiz_image_name)
 
     screen_width = self.root.winfo_screenwidth()
     screen_height = self.root.winfo_screenheight()
 
-    score = 0
-    for i, answer in enumerate(self.user_answers):
-        if answer == self.questions[i][1]:  # ✅ Compare to correct question list
-            score += 1
-    self.score = score
+    font_size_q = int(screen_height * 0.025)
+    font_size_a = int(screen_height * 0.022)
 
-    font_size_result = int(screen_height * 0.04)
-    font_size_button = int(screen_height * 0.025)
+    # Create scrollable canvas
+    frame_canvas = tk.Frame(self.root)
+    frame_canvas.pack(fill=tk.BOTH, expand=1)
 
-    result_text = f"{self.name}, your score is {self.score} out of {len(self.questions)}"
-    self.canvas.create_text(
-        screen_width // 2,
-        screen_height // 3,
-        text=result_text,
-        font=('Arial', font_size_result, 'bold'),
-        fill='black',
-        width=int(screen_width * 0.8)
-    )
+    canvas = tk.Canvas(frame_canvas, bg='white')
+    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
 
-    restart_btn = tk.Button(self.root, text="Restart", font=('Arial', font_size_button), command=self.name_screen)
-    self.canvas.create_window(screen_width // 2, screen_height // 2, window=restart_btn)
+    scrollbar = tk.Scrollbar(frame_canvas, orient=tk.VERTICAL, command=canvas.yview)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-    view_btn = tk.Button(self.root, text="View Answers", font=('Arial', font_size_button),
-                         command=self.view_answers)
-    self.canvas.create_window(screen_width // 2, screen_height // 2 + 60, window=view_btn)
+    canvas.configure(yscrollcommand=scrollbar.set)
+    canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 
+    answer_frame = tk.Frame(canvas, bg='white')
+    canvas.create_window((0, 0), window=answer_frame, anchor="nw", width=screen_width)
 
+    # Add answers
+    for i, (q, correct_ans, options) in enumerate(self.questions):
+        user_ans = self.user_answers[i]
 
+        q_label = tk.Label(answer_frame, text=f"Q{i+1}: {q}", font=('Arial', font_size_q, 'bold'),
+                           bg='white', anchor='w', justify='left', wraplength=screen_width - 100)
+        q_label.pack(padx=20, pady=(10, 0), anchor='w')
 
+        ans_text = f"Your answer: {user_ans or 'None'}    |    Correct answer: {correct_ans}"
+        color = 'green' if user_ans == correct_ans else 'red'
 
+        a_label = tk.Label(answer_frame, text=ans_text, font=('Arial', font_size_a),
+                           fg=color, bg='white', anchor='w', justify='left')
+        a_label.pack(padx=40, anchor='w')
 
-
-
-
-def update_timer(self):
-    mins = self.remaining_time // 60
-    secs = self.remaining_time % 60
-    timer_text = f"Time Left: {mins:02d}:{secs:02d}"
-
-    if hasattr(self, "timer_label") and self.timer_label.winfo_exists():
-        self.timer_label.config(text=timer_text)
-    else:
-        self.timer_label = tk.Label(self.root, text=timer_text, font=('Arial', 12), fg='red', bg='white')
-        self.canvas.create_window(400, 20, window=self.timer_label)
+    # Back button
+    back_btn = tk.Button(self.root, text="Back to Result", font=('Arial', 14), command=self.show_result)
+    self.canvas.create_window(screen_width // 2, screen_height - 40, window=back_btn)
