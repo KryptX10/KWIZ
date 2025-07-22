@@ -8,33 +8,29 @@ def view_answers(self):
     font_size_q = int(screen_height * 0.025)
     font_size_a = int(screen_height * 0.02)
 
-    # Create a new scrollable canvas and frame
-    container = tk.Frame(self.root)
+    # Create a scrollable frame
+    container = tk.Frame(self.root, bg="white")
+    canvas = tk.Canvas(container, bg="white", width=screen_width, height=screen_height)
+    scrollbar = tk.Scrollbar(container, orient="vertical", command=canvas.yview)
+    scroll_frame = tk.Frame(canvas, bg="white")
+
+    scroll_frame.bind(
+        "<Configure>",
+        lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+    )
+
+    canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
+
     container.pack(fill="both", expand=True)
-
-    scroll_canvas = tk.Canvas(container, bg="white")
-    scrollbar = tk.Scrollbar(container, orient="vertical", command=scroll_canvas.yview)
-    scroll_canvas.configure(yscrollcommand=scrollbar.set)
-
+    canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
-    scroll_canvas.pack(side="left", fill="both", expand=True)
 
-    inner_frame = tk.Frame(scroll_canvas, bg="white")
-    scroll_canvas.create_window((0, 0), window=inner_frame, anchor="nw")
+    # Title
+    tk.Label(scroll_frame, text="Review Your Answers",
+             font=('Arial', font_size_q + 4, 'bold'), bg='white', fg='black').pack(pady=(20, 10))
 
-    # Update scroll region when the inner_frame resizes
-    def update_scroll(event):
-        scroll_canvas.configure(scrollregion=scroll_canvas.bbox("all"))
-
-    inner_frame.bind("<Configure>", update_scroll)
-
-    # Add review content
-    y = 20
-    spacing = int(screen_height * 0.08)
-
-    tk.Label(inner_frame, text="Review Your Answers", font=('Arial', font_size_q + 4, 'bold'),
-             bg="white", fg="black").pack(pady=(10, 20))
-
+    # Populate review
     for i, (question, correct, options) in enumerate(self.questions):
         user_answer = self.user_answers[i] or "No Answer"
         color = "green" if user_answer == correct else "red"
@@ -43,14 +39,13 @@ def view_answers(self):
         user_text = f"Your Answer: {user_answer}"
         correct_text = f"Correct Answer: {correct}"
 
-        tk.Label(inner_frame, text=q_text, font=('Arial', font_size_q, 'bold'), bg="white", wraplength=screen_width-100,
-                 justify="left").pack(anchor="w", padx=20)
-        tk.Label(inner_frame, text=user_text, font=('Arial', font_size_a), fg=color,
-                 bg="white", wraplength=screen_width-100, justify="left").pack(anchor="w", padx=40)
-        tk.Label(inner_frame, text=correct_text, font=('Arial', font_size_a), fg="blue",
-                 bg="white", wraplength=screen_width-100, justify="left").pack(anchor="w", padx=40)
-        tk.Label(inner_frame, text="", bg="white").pack(pady=spacing // 4)  # Spacer
+        tk.Label(scroll_frame, text=q_text, font=('Arial', font_size_q, 'bold'),
+                 bg='white', fg='black', wraplength=screen_width - 100, justify="left").pack(anchor="w", padx=20, pady=(10, 0))
+        tk.Label(scroll_frame, text=user_text, font=('Arial', font_size_a),
+                 bg='white', fg=color, wraplength=screen_width - 100, justify="left").pack(anchor="w", padx=40)
+        tk.Label(scroll_frame, text=correct_text, font=('Arial', font_size_a),
+                 bg='white', fg='blue', wraplength=screen_width - 100, justify="left").pack(anchor="w", padx=40)
 
-    # Back to results button
-    tk.Button(inner_frame, text="Back to Result", font=('Arial', font_size_a + 2),
-              command=self.show_result).pack(pady=20)
+    # Back to Result button
+    tk.Button(scroll_frame, text="Back to Result", font=('Arial', font_size_a + 2),
+              command=self.show_result, bg='lightgray').pack(pady=30)
