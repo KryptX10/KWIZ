@@ -1,44 +1,53 @@
 def view_answers(self):
-    self.clear()
-    self.bg_photo = self.load_background(self.quiz_image_name)
-
+    self.clear(exclude_timer=True)
     screen_width = self.root.winfo_screenwidth()
     screen_height = self.root.winfo_screenheight()
 
     font_size_q = int(screen_height * 0.025)
-    font_size_a = int(screen_height * 0.022)
+    font_size_a = int(screen_height * 0.02)
+    spacing = int(screen_height * 0.08)
 
-    # Create scrollable canvas
-    frame_canvas = tk.Frame(self.root)
-    frame_canvas.pack(fill=tk.BOTH, expand=1)
+    # Create scrollable frame
+    container = tk.Frame(self.root, bg='white')
+    canvas = tk.Canvas(container, bg='white', width=screen_width, height=screen_height)
+    scrollbar = tk.Scrollbar(container, orient="vertical", command=canvas.yview)
+    scrollable_frame = tk.Frame(canvas, bg='white')
 
-    canvas = tk.Canvas(frame_canvas, bg='white')
-    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+    scrollable_frame.bind(
+        "<Configure>",
+        lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+    )
 
-    scrollbar = tk.Scrollbar(frame_canvas, orient=tk.VERTICAL, command=canvas.yview)
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
+    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
     canvas.configure(yscrollcommand=scrollbar.set)
-    canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 
-    answer_frame = tk.Frame(canvas, bg='white')
-    canvas.create_window((0, 0), window=answer_frame, anchor="nw", width=screen_width)
+    # Place container using canvas so it's aligned with your window
+    self.canvas.create_window(screen_width // 2, screen_height // 2, window=container, anchor="center")
+    container.pack(fill='both', expand=True)
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
 
-    # Add answers
-    for i, (q, correct_ans, options) in enumerate(self.questions):
-        user_ans = self.user_answers[i]
+    # Title
+    tk.Label(scrollable_frame, text="Review Your Answers", font=('Arial', font_size_q + 4, 'bold'),
+             fg='black', bg='white').pack(pady=10)
 
-        q_label = tk.Label(answer_frame, text=f"Q{i+1}: {q}", font=('Arial', font_size_q, 'bold'),
-                           bg='white', anchor='w', justify='left', wraplength=screen_width - 100)
-        q_label.pack(padx=20, pady=(10, 0), anchor='w')
+    # Display Q&A
+    for i, (question, correct, options) in enumerate(self.questions):
+        user_answer = self.user_answers[i] or "No Answer"
+        color = "green" if user_answer == correct else "red"
 
-        ans_text = f"Your answer: {user_ans or 'None'}    |    Correct answer: {correct_ans}"
-        color = 'green' if user_ans == correct_ans else 'red'
+        q_text = f"Q{i + 1}: {question}"
+        user_text = f"Your Answer: {user_answer}"
+        correct_text = f"Correct Answer: {correct}"
 
-        a_label = tk.Label(answer_frame, text=ans_text, font=('Arial', font_size_a),
-                           fg=color, bg='white', anchor='w', justify='left')
-        a_label.pack(padx=40, anchor='w')
+        tk.Label(scrollable_frame, text=q_text, font=('Arial', font_size_q, 'bold'),
+                 wraplength=screen_width - 100, justify='left', bg='white').pack(anchor='w', padx=30)
+        tk.Label(scrollable_frame, text=user_text, font=('Arial', font_size_a),
+                 fg=color, bg='white').pack(anchor='w', padx=50)
+        tk.Label(scrollable_frame, text=correct_text, font=('Arial', font_size_a),
+                 fg='blue', bg='white').pack(anchor='w', padx=50)
+        tk.Label(scrollable_frame, text="", bg='white').pack(pady=spacing // 4)  # spacer
 
-    # Back button
-    back_btn = tk.Button(self.root, text="Back to Result", font=('Arial', 14), command=self.show_result)
-    self.canvas.create_window(screen_width // 2, screen_height - 40, window=back_btn)
+    # Back Button
+    tk.Button(scrollable_frame, text="Back to Result", font=('Arial', font_size_a + 2),
+              command=self.show_result).pack(pady=30)
