@@ -1,67 +1,49 @@
-def select_subjects(self):
-    self.name = self.name_entry.get().strip()
-    if not self.name:
-        messagebox.showerror("Input Error", "Please enter your name.")
-        return
-
+def show_question(self):
     self.bg_photo = self.load_background(self.quiz_image_name)
-    self.clear()
+    self.clear(exclude_timer=True)
+
+    if self.current_question_index >= len(self.questions):
+        return self.show_result()
 
     screen_width = self.root.winfo_screenwidth()
     screen_height = self.root.winfo_screenheight()
 
-    self.canvas.create_text(screen_width // 2, 50, text="Select 4 subjects:", font=('Arial', 20), fill='black')
+    q, ans, options = self.questions[self.current_question_index]
+    self.correct_answer = ans
+    self.selected_option = tk.StringVar(value="")
 
-    self.selected_subjects = []
-    self.subject_buttons = {}
-    subjects = list(questions_data.keys())
+    # Adjust font size based on screen size
+    font_size_question = int(screen_height * 0.03)  # ~3% of screen height
+    font_size_options = int(screen_height * 0.025)  # ~2.5% of screen height
 
-    cols = 4
-    spacing_x = screen_width // (cols + 1)
-    spacing_y = screen_height // 4
+    # Question number
+    self.canvas.create_text(screen_width // 2, screen_height * 0.05, 
+                            text=f"Question {self.current_question_index + 1} of {len(self.questions)}", 
+                            font=('Arial', font_size_question, 'bold'), fill='black')
 
-    for index, subject in enumerate(subjects):
-        row = index // cols
-        col = index % cols
-        x = spacing_x * (col + 1)
-        y = 100 + row * 80
+    # Question text (wrap and center, with dynamic width)
+    self.canvas.create_text(screen_width // 2, screen_height * 0.12, text=q, font=('Arial', font_size_question, 'bold'),
+                            fill='black', width=int(screen_width * 0.8))  # 80% of screen width
 
-        btn = tk.Button(
-            self.root, text=subject, font=('Arial', 14), width=15, bg='white', relief='raised',
-            command=lambda s=subject: self.toggle_subject(s)
-        )
-        self.canvas.create_window(x, y, window=btn)
-        self.subject_buttons[subject] = btn
+    # Options spacing
+    option_start_y = int(screen_height * 0.18)
+    option_spacing = int(screen_height * 0.06)  # Spacing between options
 
-    start_btn = tk.Button(self.root, text="Start Quiz", font=('Arial', 14), command=self.start_quiz)
-    self.canvas.create_window(screen_width // 2, screen_height - 100, window=start_btn)
+    for i, opt in enumerate(options):
+        rb = tk.Radiobutton(self.root, text=opt, variable=self.selected_option, value=opt,
+                            font=('Arial', font_size_options), fg='black', bg='white', anchor='w', 
+                            width=40, justify='left', padx=10)
+        self.canvas.create_window(screen_width // 2, option_start_y + i * option_spacing, window=rb)
 
-def toggle_subject(self, subject):
-    if subject in self.selected_subjects:
-        self.selected_subjects.remove(subject)
-        self.subject_buttons[subject].config(bg='white', relief='raised')
-    else:
-        if len(self.selected_subjects) >= 4:
-            messagebox.showwarning("Limit Reached", "You can only select 4 subjects.")
-            return
-        self.selected_subjects.append(subject)
-        self.subject_buttons[subject].config(bg='lightblue', relief='sunken')
+    # Navigation buttons (adjust position)
+    btn_frame = tk.Frame(self.root, bg='white')
+    button_font_size = int(screen_height * 0.02)  # Adjust button text size dynamically
 
-def start_quiz(self):
-    if len(self.selected_subjects) != 4:
-        messagebox.showerror("Selection Error", "Please select exactly 4 subjects.")
-        return
+    if self.current_question_index > 0:
+        prev_btn = tk.Button(btn_frame, text="Previous", font=('Arial', button_font_size), command=self.prev_question)
+        prev_btn.pack(side='left', padx=10)
 
-    self.questions = []
-    for subj in self.selected_subjects:
-        subject_questions = questions_data[subj]
-        if len(subject_questions) < 10:
-            messagebox.showerror("Data Error", f"Not enough questions in {subj}.")
-            return
-        self.questions += random.sample(subject_questions, 10)
+    next_btn = tk.Button(btn_frame, text="Next", font=('Arial', button_font_size), command=self.next_question)
+    next_btn.pack(side='left', padx=10)
 
-    random.shuffle(self.questions)
-    self.current_question_index = 0
-    self.score = 0
-    self.start_timer()
-    self.show_question()
+    self.canvas.create_window(screen_width // 2, option_start_y + len(options) * option_spacing + 30, window=btn_frame)
