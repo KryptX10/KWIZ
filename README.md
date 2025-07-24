@@ -10,7 +10,7 @@ def view_answers(self):
 
     # Create a scrollable frame
     container = tk.Frame(self.root, bg="white")
-    canvas = tk.Canvas(container, bg="white", width=screen_width, height=screen_height)
+    canvas = tk.Canvas(container, bg="white", width=screen_width, highlightthickness=0)
     scrollbar = tk.Scrollbar(container, orient="vertical", command=canvas.yview)
     scroll_frame = tk.Frame(canvas, bg="white")
 
@@ -26,9 +26,9 @@ def view_answers(self):
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
 
-    # Title
+    # Title (reduced top padding)
     tk.Label(scroll_frame, text="Review Your Answers",
-             font=('Arial', font_size_q + 4, 'bold'), bg='white', fg='black').pack(pady=(20, 10))
+             font=('Arial', font_size_q + 4, 'bold'), bg='white', fg='black').pack(pady=(5, 10))
 
     # Populate review
     for i, (question, correct, options) in enumerate(self.questions):
