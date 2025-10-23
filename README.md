@@ -1,75 +1,188 @@
-def show_question(self):
-    self.bg_photo = self.load_background(self.quiz_image_name)
-    self.clear(exclude_timer=True)
 
-    if self.current_question_index >= len(self.questions):
-        return self.show_result()
+🧠 Claude Prompt — Smart CGPA Calculator (Flutter App)
 
-    screen_width = self.root.winfo_screenwidth()
-    screen_height = self.root.winfo_screenheight()
+> Task:
+Build a complete Flutter mobile application called “Smart CGPA Calculator” with user authentication, local data storage, and GPA/CGPA computation features.
+Use Dart and the Flutter Material 3 design system.
+The app should be responsive, modern, and ready for Android deployment.
 
-    question_text, correct_ans, options, image_path = self.questions[self.current_question_index]
-    self.correct_answer = correct_ans
-    self.selected_option = None
 
-    font_size_q = int(screen_height * 0.03)
-    font_size_options = int(screen_height * 0.025)
-    option_spacing = 60
-    option_start_y = int(screen_height * 0.4)
 
-    # Show image if exists
-    if image_path:
-        img = Image.open(image_path)
-        img = img.resize((int(screen_width * 0.4), int(screen_height * 0.3)))
-        self.image_photo = ImageTk.PhotoImage(img)
-        image_label = tk.Label(self.canvas, image=self.image_photo, bg="white")
-        self.canvas.create_window(screen_width // 2, int(screen_height * 0.22), window=image_label)
 
-    # Show question text
-    self.canvas.create_text(screen_width // 2, option_start_y - 70, text=question_text,
-                            fill="black", font=("Arial", font_size_q), width=int(screen_width * 0.8))
+---
 
-    # Shuffle options
-    options = options.copy()
-    random.shuffle(options)
+🏗️ App Flow & Features
 
-    # Select option function
-    def select_option(opt, btn):
-        for b in self.option_buttons:
-            b.config(bg='white', relief='raised')
-        btn.config(bg='lightblue', relief='sunken')
-        self.selected_option = opt
+1. Splash & Authentication
 
-    # Create option buttons
-    self.option_buttons = []
-    for i, opt in enumerate(options):
-        btn = tk.Button(self.root, text=opt,
-                        font=('Arial', font_size_options), width=40,
-                        anchor='w', justify='left', bg='white', relief='raised')
-        btn.config(command=lambda o=opt, b=btn: select_option(o, b))
-        self.option_buttons.append(btn)
-        self.canvas.create_window(screen_width // 2, option_start_y + i * option_spacing, window=btn)
+Show a splash screen with app name and logo.
 
-    # Restore previously selected answer (if any)
-    previous_selection = self.user_answers[self.current_question_index]
-    if previous_selection:
-        for btn in self.option_buttons:
-            if btn['text'] == previous_selection:
-                btn.config(bg='lightblue', relief='sunken')
-                self.selected_option = previous_selection
-                break
+If it’s the user’s first time:
 
-    # Navigation buttons (Previous / Next)
-    btn_frame = tk.Frame(self.root, bg='white')
-    if self.current_question_index > 0:
-        prev_btn = tk.Button(btn_frame, text="Previous", font=('Arial', 14), command=self.prev_question)
-        prev_btn.pack(side='left', padx=10)
+Display a Sign Up screen (Full Name, Email/Username, Password).
 
-    next_btn = tk.Button(btn_frame, text="Next", font=('Arial', 14), command=self.next_question)
-    next_btn.pack(side='left', padx=10)
+Save credentials locally using shared_preferences or hive.
 
-    self.canvas.create_window(screen_width // 2,
-                              option_start_y + len(options) * option_spacing + 30,
-                              window=btn_frame)
 
-    self.update_timer()
+On future launches:
+
+Show Login screen (Email/Username + Password).
+
+If password matches saved data → navigate to main dashboard.
+
+
+
+
+2. Dashboard
+
+Two main options:
+
+🧮 Add Courses
+
+📊 View GPA/CGPA
+
+
+Include an AppBar with user’s name and a settings icon.
+
+
+
+3. Add Courses Screen
+
+Input fields:
+
+Course Code (text)
+
+Course Unit (number)
+
+Grade (dropdown: A, B, C, D, E, F)
+
+
+Button: Add Course
+
+Show a scrollable list of added courses (editable and deletable).
+
+Save course data persistently (use Hive or SQLite).
+
+
+
+4. GPA & CGPA Calculation
+
+Grade points: A=5, B=4, C=3, D=2, E=1, F=0.
+
+GPA = (Σ grade points × course units) ÷ total units for that semester.
+
+CGPA = (Σ total grade points of all semesters) ÷ total units overall.
+
+Allow multiple semesters — each with its own list of courses.
+
+
+
+5. Results Screen
+
+Display each semester’s GPA and the overall CGPA.
+
+Use color codes:
+
+🟢 Excellent (≥ 4.5)
+
+🟡 Average (2.5–4.49)
+
+🔴 Poor (< 2.5)
+
+
+Include a graph or bar chart showing GPA trends (use fl_chart).
+
+
+
+6. Settings Page
+
+Change password option.
+
+Toggle for Dark/Light mode.
+
+Logout button (clears session).
+
+
+
+
+
+---
+
+🎨 Design Requirements
+
+Use Material 3 components (Cards, ElevatedButtons, NavigationBar).
+
+Rounded corners (BorderRadius.circular(16) or 20).
+
+Soft shadows and smooth transitions (AnimatedContainer or Hero).
+
+Modern color palette (pastel or blue-themed).
+
+App logo at top of Sign Up/Login screens.
+
+
+
+---
+
+🧩 Architecture & Code Structure
+
+lib/
+ ┣ screens/
+ ┃ ┣ splash_screen.dart
+ ┃ ┣ signup_screen.dart
+ ┃ ┣ login_screen.dart
+ ┃ ┣ dashboard_screen.dart
+ ┃ ┣ add_courses_screen.dart
+ ┃ ┗ results_screen.dart
+ ┣ models/
+ ┃ ┗ course_model.dart
+ ┣ services/
+ ┃ ┣ auth_service.dart
+ ┃ ┣ storage_service.dart
+ ┃ ┗ gpa_calculator.dart
+ ┣ widgets/
+ ┃ ┣ course_card.dart
+ ┃ ┗ custom_input_field.dart
+ ┗ main.dart
+
+Use Provider or Riverpod for state management.
+
+Comment code clearly for readability.
+
+
+
+---
+
+💾 Technical Notes
+
+Prefer Hive for local database (lightweight, key-value).
+
+Use shared_preferences for auth info and app settings.
+
+Store all data offline (no internet required).
+
+Include basic validation (no empty fields, numeric units only, etc.).
+
+
+
+---
+
+🎁 Optional Enhancements
+
+Export GPA/CGPA summary as PDF (using pdf package).
+
+Display motivational messages based on GPA.
+
+Animated welcome message with the user’s name after login.
+
+
+
+---
+
+🔚 Deliverables
+
+Full Flutter source code.
+
+Well-commented, readable Dart files.
+
+Ready-to-build Android APK.
